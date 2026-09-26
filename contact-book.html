@@ -935,7 +935,10 @@ let linkedHandle = null;
 let linkedLastMod = null;
 let pollTimer = null;
 /* Google Sheet cloud sync (works on any device/browser, unlike the local-file sync above) */
-let cloudSyncUrl = localStorage.getItem('crbCloudSyncUrl') || '';
+/* Baked-in default so every visitor auto-connects with no manual setup. A URL saved via the
+   Connect button (localStorage) still overrides this if you ever need to point at a different Sheet. */
+const DEFAULT_CLOUD_SYNC_URL = 'https://script.google.com/macros/s/AKfycbya_gLg4AizKiCJw8XcxFjwKKLGsuwg0VKjIWh-ICYEjdFDfJsaGjLbrS8lN9PNOynV_Q/exec';
+let cloudSyncUrl = localStorage.getItem('crbCloudSyncUrl') || DEFAULT_CLOUD_SYNC_URL;
 let cloudLastUpdated = null;
 let cloudPollTimer = null;
 let cloudSyncBusy = false;
