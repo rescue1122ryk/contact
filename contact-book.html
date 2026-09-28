@@ -263,6 +263,16 @@
 </style>
 </head>
 <body>
+<div id="pinOverlay" style="position:fixed; inset:0; z-index:99999; background:#F4F6FA; display:flex; align-items:center; justify-content:center; padding:20px;">
+  <div style="background:#fff; border-radius:14px; box-shadow:0 8px 30px rgba(0,0,0,0.12); padding:28px 26px; width:100%; max-width:340px; text-align:center; font-family:inherit;">
+    <div style="font-size:34px; margin-bottom:6px;">🔒</div>
+    <div style="font-weight:800; font-size:17px; color:#22262E; margin-bottom:4px;">Contact Book</div>
+    <div style="font-size:12.5px; color:#8A94A3; margin-bottom:16px;">Enter PIN to continue</div>
+    <input id="pinInput" type="password" autocomplete="off" placeholder="PIN" style="width:100%; box-sizing:border-box; padding:11px 12px; font-size:16px; text-align:center; letter-spacing:3px; border:1px solid #D9DEE7; border-radius:8px; margin-bottom:10px;" onkeydown="if(event.key==='Enter') submitPin()">
+    <div id="pinMsg" style="min-height:18px; font-size:12.5px; font-weight:700; color:#E0374B; margin-bottom:8px;"></div>
+    <button class="btn btn-purple" style="width:100%;" onclick="submitPin()">Unlock</button>
+  </div>
+</div>
 
 <div class="navbar">
   <div class="left">
@@ -939,6 +949,7 @@ let pollTimer = null;
    Connect button (localStorage) still overrides this if you ever need to point at a different Sheet. */
 const DEFAULT_CLOUD_SYNC_URL = 'https://script.google.com/macros/s/AKfycbya_gLg4AizKiCJw8XcxFjwKKLGsuwg0VKjIWh-ICYEjdFDfJsaGjLbrS8lN9PNOynV_Q/exec';
 let cloudSyncUrl = localStorage.getItem('crbCloudSyncUrl') || DEFAULT_CLOUD_SYNC_URL;
+let cloudPin = localStorage.getItem('crbPin') || '';
 let cloudLastUpdated = null;
 let cloudPollTimer = null;
 let cloudSyncBusy = false;
@@ -2577,12 +2588,26 @@ function generateMonthlyReportPDF(){
   }, 150);
 }
 function renderRecordSearchResults(){
-  const from = document.getElementById('rs_fromDate').value;
-  const to = document.getElementById('rs_toDate').value;
+  let from = document.getElementById('rs_fromDate').value;
+  let to = document.getElementById('rs_toDate').value;
   const q = document.getElementById('rs_query').value.trim().toLowerCase();
+  // No date picked -> default to the current month only.
+  // One date picked -> show just that date. Both picked -> that range.
+  let scopeLabel;
+  if(!from && !to){
+    const now = new Date();
+    const pad = n=>String(n).padStart(2,'0');
+    const last = new Date(now.getFullYear(), now.getMonth()+1, 0).getDate();
+    from = now.getFullYear()+'-'+pad(now.getMonth()+1)+'-01';
+    to = now.getFullYear()+'-'+pad(now.getMonth()+1)+'-'+pad(last);
+    scopeLabel = now.toLocaleString('en-US',{month:'long',year:'numeric'})+' (select a date to see other days)';
+  } else {
+    if(from && !to) to = from;
+    if(to && !from) from = to;
+    scopeLabel = from===to ? from : (from+' to '+to);
+  }
   let list = events.filter(e=> !e.hidden && e.type===recordSearchType);
-  if(from) list = list.filter(e=> e.date >= from);
-  if(to) list = list.filter(e=> e.date <= to);
+  list = list.filter(e=> e.date >= from && e.date <= to);
   if(q){
     list = list.filter(e=>{
       const c = contacts.find(x=>String(x.id)===String(e.employeeId));
@@ -2592,7 +2617,7 @@ function renderRecordSearchResults(){
   }
   list = list.slice().sort((a,b)=> (b.date||'').localeCompare(a.date||''));
   lastSearchResults = list;
-  document.getElementById('rs_summary').textContent = list.length+' record'+(list.length===1?'':'s')+' found';
+  document.getElementById('rs_summary').textContent = list.length+' record'+(list.length===1?'':'s')+' found — '+scopeLabel;
   const resultsEl = document.getElementById('rs_results');
   if(list.length===0){
     resultsEl.innerHTML = '<div style="font-size:12.5px; color:#8A94A3; padding:8px 2px;">No matching records.</div>';
@@ -3072,7 +3097,7 @@ function buildCloudPayload(){
   sheets["Leave"] = leaveRecordsToRows();
   sheets["Messages"] = messagesToRows();
   sheets["Lists"] = listsToRows();
-  return { sheets };
+  return { sheets, pin: cloudPin };
 }
 
 async function saveToCloud(){
@@ -3087,6 +3112,7 @@ async function saveToCloud(){
       body: JSON.stringify(payload)
     });
     const data = await res.json();
+    if(data && data.error === 'wrong_pin'){ lockWithPin('PIN changed or wrong — enter it again'); return; }
     if(data && data.lastUpdated) cloudLastUpdated = data.lastUpdated;
     lastSyncTime = new Date();
     updateLastSyncIndicator();
@@ -3177,19 +3203,52 @@ function applyCloudData(json){
 }
 
 async function loadFromCloud(showToast){
-  if(!cloudSyncUrl) return;
+  if(!cloudSyncUrl) return false;
   try{
-    const bust = (cloudSyncUrl.includes('?') ? '&' : '?') + '_=' + Date.now();
+    const bust = (cloudSyncUrl.includes('?') ? '&' : '?') + 'pin=' + encodeURIComponent(cloudPin) + '&_=' + Date.now();
     const res = await fetch(cloudSyncUrl + bust);
     const json = await res.json();
+    if(json.error === 'wrong_pin'){
+      lockWithPin(cloudPin ? 'Wrong PIN' : '');
+      return false;
+    }
     cloudLastUpdated = json.lastUpdated || null;
     applyCloudData(json);
     setCloudStatus(true, 'Connected: Google Sheet');
     if(showToast) toast('Loaded latest data from Google Sheet');
+    return true;
   } catch(err){
     console.error('Cloud load failed', err);
     setCloudStatus(false, 'Could not reach Google Sheet');
     if(showToast) toast('Could not reach Google Sheet — check the URL');
+    const msg = document.getElementById('pinMsg');
+    if(msg && document.getElementById('pinOverlay').style.display !== 'none') msg.textContent = 'Could not reach server — check internet';
+    return false;
+  }
+}
+
+/* ---- PIN screen ---- */
+function lockWithPin(message){
+  cloudPin = '';
+  localStorage.removeItem('crbPin');
+  if(cloudPollTimer) clearInterval(cloudPollTimer);
+  document.getElementById('pinOverlay').style.display = 'flex';
+  document.getElementById('pinMsg').textContent = message || '';
+  const inp = document.getElementById('pinInput'); inp.value=''; inp.focus();
+}
+async function submitPin(){
+  const inp = document.getElementById('pinInput');
+  const v = inp.value.trim();
+  if(!v){ document.getElementById('pinMsg').textContent = 'Enter PIN'; return; }
+  cloudPin = v;
+  document.getElementById('pinMsg').style.color = '#8A94A3';
+  document.getElementById('pinMsg').textContent = 'Checking…';
+  const ok = await loadFromCloud(false);
+  document.getElementById('pinMsg').style.color = '#E0374B';
+  if(ok){
+    localStorage.setItem('crbPin', v);
+    document.getElementById('pinOverlay').style.display = 'none';
+    startCloudPolling();
   }
 }
 
@@ -3208,9 +3267,10 @@ function startCloudPolling(){
   cloudPollTimer = setInterval(async ()=>{
     if(!cloudSyncUrl) return;
     try{
-      const bust = (cloudSyncUrl.includes('?') ? '&' : '?') + 'meta=1&_=' + Date.now();
+      const bust = (cloudSyncUrl.includes('?') ? '&' : '?') + 'pin=' + encodeURIComponent(cloudPin) + '&meta=1&_=' + Date.now();
       const res = await fetch(cloudSyncUrl + bust);
       const json = await res.json();
+      if(json.error === 'wrong_pin'){ lockWithPin('PIN changed — enter the new PIN'); return; }
       if(json.lastUpdated && json.lastUpdated !== cloudLastUpdated){
         await loadFromCloud(false);
         toast('Detected update in Google Sheet — refreshed');
@@ -3597,8 +3657,12 @@ function restoreDarkModePreference(){
 render();
 restoreDarkModePreference();
 tryAutoResumeSync();
-if(cloudSyncUrl){
-  loadFromCloud(false).then(startCloudPolling);
+if(cloudSyncUrl && cloudPin){
+  loadFromCloud(false).then(function(ok){
+    if(ok){ document.getElementById('pinOverlay').style.display = 'none'; startCloudPolling(); }
+  });
+} else {
+  document.getElementById('pinInput').focus();
 }
 // Keep the on-screen ticker / tiles / recent-events list in sync with the clock — this matters
 // for a control-room display left open all day: today-only entries (Short Leave, Day Off Change,
