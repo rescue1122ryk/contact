@@ -3212,6 +3212,11 @@ async function loadFromCloud(showToast){
       lockWithPin(cloudPin ? 'Wrong PIN' : '');
       return false;
     }
+    if(!json.pinChecked){
+      // Server is running the old script that does not verify PINs — refuse to unlock.
+      lockWithPin('Google script purani hai (PIN check nahi karti). Naya Code.gs deploy karein.');
+      return false;
+    }
     cloudLastUpdated = json.lastUpdated || null;
     applyCloudData(json);
     setCloudStatus(true, 'Connected: Google Sheet');
@@ -3270,7 +3275,7 @@ function startCloudPolling(){
       const bust = (cloudSyncUrl.includes('?') ? '&' : '?') + 'pin=' + encodeURIComponent(cloudPin) + '&meta=1&_=' + Date.now();
       const res = await fetch(cloudSyncUrl + bust);
       const json = await res.json();
-      if(json.error === 'wrong_pin'){ lockWithPin('PIN changed — enter the new PIN'); return; }
+      if(json.error === 'wrong_pin' || (json.lastUpdated && !json.pinChecked)){ lockWithPin('PIN changed — enter the new PIN'); return; }
       if(json.lastUpdated && json.lastUpdated !== cloudLastUpdated){
         await loadFromCloud(false);
         toast('Detected update in Google Sheet — refreshed');
