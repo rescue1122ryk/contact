@@ -2508,6 +2508,34 @@ function dedupeLeaveRecords(records){
   });
   return result;
 }
+
+// Casual Leave annual quota: only the "Casual Leave" type is deducted from this — Gazetted
+// Holidays, Medical/Leave, and any other Leave Type never count against it.
+const CASUAL_LEAVE_ANNUAL_QUOTA = 24;
+function isCasualLeaveType(t){ return (t||'').trim().toLowerCase().includes('casual'); }
+// Best-effort year for a leave record: first 4-digit year found in its date range, else in its
+// upload date. Records where no year can be determined are grouped under "Unspecified".
+function leaveRecordYear(r){
+  const m1 = (r.dateRange||'').match(/\b(19|20)\d{2}\b/);
+  if(m1) return m1[0];
+  const m2 = (r.createdAt||'').match(/\b(19|20)\d{2}\b/);
+  if(m2) return m2[0];
+  return 'Unspecified';
+}
+// Per-year Casual Leave usage/balance for one employee's (already deduped, non-cancelled) records.
+function casualLeaveBalances(activeRecords){
+  const byYear = {};
+  activeRecords.forEach(r=>{
+    if(!isCasualLeaveType(r.leaveType)) return;
+    const y = leaveRecordYear(r);
+    byYear[y] = (byYear[y]||0) + leaveDayValue(r);
+  });
+  return Object.keys(byYear).sort().map(year=>{
+    const used = byYear[year];
+    const remaining = CASUAL_LEAVE_ANNUAL_QUOTA - used;
+    return { year, used, remaining };
+  });
+}
 function leaveSummaryGroups(){
   // Group leave records by employee code (falls back to name if code is blank) — not hidden
   const map = new Map();
@@ -2534,6 +2562,7 @@ function leaveSummaryGroups(){
       name:g.name, employeeCode:g.employeeCode, designation:g.designation,
       count:records.length, totalDays, byType,
       cancelledCount:cancelled.length, cancelledDays,
+      casualBalances: casualLeaveBalances(active),
       records:records
     };
   }).sort((a,b)=> (a.name||'').localeCompare(b.name||''));
@@ -2542,6 +2571,11 @@ function leaveGroupSummaryLine(g){
   const typeParts = Object.entries(g.byType).map(([t,d])=> `${t}: ${d}`).join(' · ');
   const cancelledPart = g.cancelledCount>0 ? ` · Cancelled: ${g.cancelledDays}` : '';
   return `Total: ${g.totalDays}${typeParts?(' ('+typeParts+')'):''}${cancelledPart}`;
+}
+// e.g. "Casual Leave Balance 2026: 19/24 left" — one segment per year that has Casual Leave activity.
+function casualBalanceLine(g){
+  if(!g.casualBalances || g.casualBalances.length===0) return '';
+  return g.casualBalances.map(b=> `${b.year==='Unspecified'?'Casual Leave Balance':('Casual Leave Balance '+b.year)}: ${b.remaining}/${CASUAL_LEAVE_ANNUAL_QUOTA} left`).join(' · ');
 }
 function renderLeaveSummary(){
   const listEl = document.getElementById('leaveSummaryList');
@@ -2560,7 +2594,7 @@ function renderLeaveSummary(){
       <div style="min-width:0;">
         <div style="font-size:13.5px; font-weight:600; color:#22262E; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${g.name||'(no name)'}</div>
         <div style="font-size:11.5px; color:#8A94A3;">${g.employeeCode?('Code: '+g.employeeCode):''}${g.designation?(' · '+g.designation):''}</div>
-        <div style="font-size:11.5px; color:#3B7DED; margin-top:2px;">${leaveGroupSummaryLine(g)}</div>
+        <div style="font-size:11.5px; color:#3B7DED; margin-top:2px;">${leaveGroupSummaryLine(g)}</div>${casualBalanceLine(g)?`<div style="font-size:11.5px; font-weight:700; color:#2CB673; margin-top:2px;">${casualBalanceLine(g)}</div>`:''}
       </div>
       <button onclick="openLeaveDetail(${i})" style="flex-shrink:0; background:#EFF3FF; color:#3B7DED; border:1px solid #C9D8FB; border-radius:6px; padding:5px 10px; font-size:12px; font-weight:600; cursor:pointer;">Detail</button>
     </div>`).join('');
@@ -2570,7 +2604,7 @@ function openLeaveDetail(i){
   if(!g) return;
   document.getElementById('leaveDetailTitle').textContent = g.name || '(no name)';
   document.getElementById('leaveDetailTotal').innerHTML = `
-    <div>${leaveGroupSummaryLine(g)}</div>
+    <div>${leaveGroupSummaryLine(g)}</div>${casualBalanceLine(g)?`<div style="font-weight:700; color:#2CB673; margin-top:4px;">${casualBalanceLine(g)}</div>`:''}
     <div style="font-weight:400; font-size:12px; color:#8A94A3; margin-top:3px;">${g.count} entr${g.count===1?'y':'ies'}${g.employeeCode?' · Code: '+g.employeeCode:''}</div>`;
   document.getElementById('leaveDetailRows').innerHTML = g.records.map(r=>{
     const cancelled = isCancelledLeave(r);
