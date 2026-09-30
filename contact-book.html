@@ -2637,10 +2637,18 @@ function leaveGroupSummaryLine(g){
   const cancelledPart = g.cancelledCount>0 ? ` · Cancelled: ${g.cancelledDays}` : '';
   return `Total: ${g.totalDays}${typeParts?(' ('+typeParts+')'):''}${cancelledPart}`;
 }
-// e.g. "Casual Leave Balance 2026: 19/24 left" — one segment per year that has Casual Leave activity.
-function casualBalanceLine(g){
+// Bold, two-colour pill(s) — e.g. a big "10" in red/orange/green (by how low it is) next to
+// "Leave Balance 2026" in blue — one pill per year that has Casual Leave activity.
+function casualBalanceBadgeHtml(g){
   if(!g.casualBalances || g.casualBalances.length===0) return '';
-  return g.casualBalances.map(b=> `${b.year==='Unspecified'?'Casual Leave Balance':('Casual Leave Balance '+b.year)}: ${b.remaining}/${CASUAL_LEAVE_ANNUAL_QUOTA} left`).join(' · ');
+  return `<div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:5px;">` + g.casualBalances.map(b=>{
+    const color = b.remaining<=5 ? '#E0374B' : (b.remaining<=10 ? '#FF9F1C' : '#2CB673');
+    const yearPart = b.year==='Unspecified' ? '' : (' '+b.year);
+    return `<div style="display:inline-flex; align-items:baseline; gap:7px; padding:5px 12px; border-radius:20px; background:${color}1A; border:1.5px solid ${color};">
+      <span style="font-size:19px; font-weight:800; color:${color}; line-height:1;">${b.remaining}</span>
+      <span style="font-size:11.5px; font-weight:700; color:#1F4FD6; line-height:1.2;">Leave Balance${yearPart} left <span style="color:#8A94A3; font-weight:600;">(of ${CASUAL_LEAVE_ANNUAL_QUOTA})</span></span>
+    </div>`;
+  }).join('') + `</div>`;
 }
 function renderLeaveSummary(){
   const listEl = document.getElementById('leaveSummaryList');
@@ -2659,7 +2667,7 @@ function renderLeaveSummary(){
       <div style="min-width:0;">
         <div style="font-size:13.5px; font-weight:600; color:#22262E; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${g.name||'(no name)'}</div>
         <div style="font-size:11.5px; color:#8A94A3;">${g.employeeCode?('Code: '+g.employeeCode):''}${g.designation?(' · '+g.designation):''}</div>
-        <div style="font-size:11.5px; color:#3B7DED; margin-top:2px;">${leaveGroupSummaryLine(g)}</div>${casualBalanceLine(g)?`<div style="font-size:11.5px; font-weight:700; color:#2CB673; margin-top:2px;">${casualBalanceLine(g)}</div>`:''}
+        <div style="font-size:11.5px; color:#3B7DED; margin-top:2px;">${leaveGroupSummaryLine(g)}</div>${casualBalanceBadgeHtml(g)}
       </div>
       <button onclick="openLeaveDetail(${i})" style="flex-shrink:0; background:#EFF3FF; color:#3B7DED; border:1px solid #C9D8FB; border-radius:6px; padding:5px 10px; font-size:12px; font-weight:600; cursor:pointer;">Detail</button>
     </div>`).join('');
@@ -2669,7 +2677,7 @@ function openLeaveDetail(i){
   if(!g) return;
   document.getElementById('leaveDetailTitle').textContent = g.name || '(no name)';
   document.getElementById('leaveDetailTotal').innerHTML = `
-    <div>${leaveGroupSummaryLine(g)}</div>${casualBalanceLine(g)?`<div style="font-weight:700; color:#2CB673; margin-top:4px;">${casualBalanceLine(g)}</div>`:''}
+    <div>${leaveGroupSummaryLine(g)}</div>${casualBalanceBadgeHtml(g)}
     <div style="font-weight:400; font-size:12px; color:#8A94A3; margin-top:3px;">${g.count} entr${g.count===1?'y':'ies'}${g.employeeCode?' · Code: '+g.employeeCode:''}</div>`;
   document.getElementById('leaveDetailRows').innerHTML = g.records.map(r=>{
     const cancelled = isCancelledLeave(r);
@@ -2886,6 +2894,15 @@ function dayOffGroupSummaryLine(g){
   const parts = Object.entries(g.byMonth).map(([m,d])=> `${m}: ${d}`).join(' · ');
   return `Total Off Days (to date): ${g.totalOff}${parts?(' ('+parts+')'):''}`;
 }
+// Bold, two-colour pill — a big total-off-days number in brown next to a purple label,
+// so it reads at a glance instead of being buried in the plain summary line.
+function dayOffBadgeHtml(g){
+  if(!g) return '';
+  return `<div style="margin-top:5px;"><div style="display:inline-flex; align-items:baseline; gap:7px; padding:5px 12px; border-radius:20px; background:#6D4C411A; border:1.5px solid #6D4C41;">
+    <span style="font-size:19px; font-weight:800; color:#6D4C41; line-height:1;">${g.totalOff||0}</span>
+    <span style="font-size:11.5px; font-weight:700; color:#8E2DE2; line-height:1.2;">Total Day Off (to date)</span>
+  </div></div>`;
+}
 function renderDayOffSummary(){
   const listEl = document.getElementById('dayOffSummaryList');
   if(!listEl) return;
@@ -2903,7 +2920,7 @@ function renderDayOffSummary(){
       <div style="min-width:0;">
         <div style="font-size:13.5px; font-weight:600; color:#22262E; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${g.name||'(no name)'}</div>
         <div style="font-size:11.5px; color:#8A94A3;">${g.employeeCode?('Code: '+g.employeeCode):''}${g.station?(' · '+g.station):''}</div>
-        <div style="font-size:11.5px; color:#6D4C41; margin-top:2px;">${dayOffGroupSummaryLine(g)}</div>
+        <div style="font-size:11.5px; color:#6D4C41; margin-top:2px;">${dayOffGroupSummaryLine(g)}</div>${dayOffBadgeHtml(g)}
       </div>
       <button onclick="openDayOffDetail(${i})" style="flex-shrink:0; background:#EFF3FF; color:#3B7DED; border:1px solid #C9D8FB; border-radius:6px; padding:5px 10px; font-size:12px; font-weight:600; cursor:pointer;">Detail</button>
     </div>`).join('');
@@ -2913,7 +2930,7 @@ function openDayOffDetail(i){
   if(!g) return;
   document.getElementById('dayOffDetailTitle').textContent = g.name || '(no name)';
   document.getElementById('dayOffDetailTotal').innerHTML = `
-    <div>${dayOffGroupSummaryLine(g)}</div>
+    <div>${dayOffGroupSummaryLine(g)}</div>${dayOffBadgeHtml(g)}
     <div style="font-weight:400; font-size:12px; color:#8A94A3; margin-top:3px;">${g.count} month${g.count===1?'':'s'} on file${g.employeeCode?' · Code: '+g.employeeCode:''}</div>`;
   document.getElementById('dayOffDetailRows').innerHTML = g.records.map(r=>{
     return `
