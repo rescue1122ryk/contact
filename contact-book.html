@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#43A047">
 <title>Contact Book</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E%F0%9F%93%92%3C/text%3E%3C/svg%3E">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   * { box-sizing: border-box; margin:0; padding:0; }
@@ -2646,7 +2647,7 @@ function casualBalanceBadgeHtml(g){
     const yearPart = b.year==='Unspecified' ? '' : (' '+b.year);
     return `<div style="display:inline-flex; align-items:baseline; gap:7px; padding:5px 12px; border-radius:20px; background:${color}1A; border:1.5px solid ${color};">
       <span style="font-size:19px; font-weight:800; color:${color}; line-height:1;">${b.remaining}</span>
-      <span style="font-size:11.5px; font-weight:700; color:#1F4FD6; line-height:1.2;">Leave Balance${yearPart} left <span style="color:#8A94A3; font-weight:600;">(of ${CASUAL_LEAVE_ANNUAL_QUOTA})</span></span>
+      <span style="font-size:11.5px; font-weight:700; color:#1F4FD6; line-height:1.2;">Leave Balance${yearPart} left</span>
     </div>`;
   }).join('') + `</div>`;
 }
@@ -2890,18 +2891,13 @@ function dayOffSummaryGroups(){
     return { name:g.name, employeeCode:g.employeeCode, station:g.station, count:records.length, totalOff, byMonth, records };
   }).sort((a,b)=> (a.name||'').localeCompare(b.name||''));
 }
+// One bold line: the running total in green, and — right alongside it, in blue — the
+// month-by-month breakdown that backs it up.
 function dayOffGroupSummaryLine(g){
   const parts = Object.entries(g.byMonth).map(([m,d])=> `${m}: ${d}`).join(' · ');
-  return `Total Off Days (to date): ${g.totalOff}${parts?(' ('+parts+')'):''}`;
-}
-// Bold, two-colour pill — a big total-off-days number in brown next to a purple label,
-// so it reads at a glance instead of being buried in the plain summary line.
-function dayOffBadgeHtml(g){
-  if(!g) return '';
-  return `<div style="margin-top:5px;"><div style="display:inline-flex; align-items:baseline; gap:7px; padding:5px 12px; border-radius:20px; background:#6D4C411A; border:1.5px solid #6D4C41;">
-    <span style="font-size:19px; font-weight:800; color:#6D4C41; line-height:1;">${g.totalOff||0}</span>
-    <span style="font-size:11.5px; font-weight:700; color:#8E2DE2; line-height:1.2;">Total Day Off (to date)</span>
-  </div></div>`;
+  return `<div style="margin-top:3px; font-size:12.5px; font-weight:800; line-height:1.4;">
+    <span style="color:#1E8E3E;">${g.totalOff||0} Day Off${(g.totalOff||0)===1?'':'s'} so far</span>${parts?` <span style="color:#3B7DED; font-weight:700;">(${parts})</span>`:''}
+  </div>`;
 }
 function renderDayOffSummary(){
   const listEl = document.getElementById('dayOffSummaryList');
@@ -2920,7 +2916,7 @@ function renderDayOffSummary(){
       <div style="min-width:0;">
         <div style="font-size:13.5px; font-weight:600; color:#22262E; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${g.name||'(no name)'}</div>
         <div style="font-size:11.5px; color:#8A94A3;">${g.employeeCode?('Code: '+g.employeeCode):''}${g.station?(' · '+g.station):''}</div>
-        <div style="font-size:11.5px; color:#6D4C41; margin-top:2px;">${dayOffGroupSummaryLine(g)}</div>${dayOffBadgeHtml(g)}
+        ${dayOffGroupSummaryLine(g)}
       </div>
       <button onclick="openDayOffDetail(${i})" style="flex-shrink:0; background:#EFF3FF; color:#3B7DED; border:1px solid #C9D8FB; border-radius:6px; padding:5px 10px; font-size:12px; font-weight:600; cursor:pointer;">Detail</button>
     </div>`).join('');
@@ -2930,7 +2926,7 @@ function openDayOffDetail(i){
   if(!g) return;
   document.getElementById('dayOffDetailTitle').textContent = g.name || '(no name)';
   document.getElementById('dayOffDetailTotal').innerHTML = `
-    <div>${dayOffGroupSummaryLine(g)}</div>${dayOffBadgeHtml(g)}
+    ${dayOffGroupSummaryLine(g)}
     <div style="font-weight:400; font-size:12px; color:#8A94A3; margin-top:3px;">${g.count} month${g.count===1?'':'s'} on file${g.employeeCode?' · Code: '+g.employeeCode:''}</div>`;
   document.getElementById('dayOffDetailRows').innerHTML = g.records.map(r=>{
     return `
