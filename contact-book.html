@@ -430,7 +430,7 @@
     <span class="user" style="display:flex; flex-direction:column; line-height:1.15; text-align:right;"><span>SHAHID</span><span>JAMIL</span></span>
   </div>
 
-  <div class="dropdown-panel" id="bdayPanel">
+  <div class="dropdown-panel" id="bdayPanel" style="width:340px; max-height:70vh; overflow-y:auto;">
     <div class="dp-head">Upcoming Birthdays (next 2 days)</div>
     <div id="bdayList"></div>
   </div>
@@ -731,6 +731,22 @@
         Choose one or more monthly Leave files (CSV or Excel) with columns: Name, Employee ID, Designation, Station, District, Leave Type, Date Range, Days, Remarks, Created At, Status.
         The rows get added to the end of the existing Leave records — nothing already saved is removed.
       </p>
+
+      <div style="position:sticky; top:0; z-index:2; background:#fff; padding-top:2px; padding-bottom:6px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; gap:8px; flex-wrap:wrap;">
+          <label style="margin:0; font-weight:600;">Leave Summary — by employee</label>
+          <div style="display:flex; gap:6px;">
+            <button onclick="generateLowLeaveBalanceReportPDF()" style="background:#EFF3FF; color:#3B7DED; border:1px solid #C9D8FB; border-radius:7px; padding:6px 10px; font-size:12px; font-weight:600; cursor:pointer;" title="PDF report of every employee with 4 or fewer Casual Leave days left">📄 Low Balance Report (≤4)</button>
+            <button onclick="clearAllLeaveRecords()" style="background:#FFF1F2; color:#E0374B; border:1px solid #F3C2C8; border-radius:7px; padding:6px 10px; font-size:12px; font-weight:600; cursor:pointer;">🗑 All Clear</button>
+          </div>
+        </div>
+        <div class="field" style="margin-bottom:0;">
+          <input type="text" id="leaveSummarySearch" placeholder="Search by name or employee code..." oninput="renderLeaveSummary()" autofocus>
+        </div>
+      </div>
+      <div id="leaveSummaryList" style="max-height:260px; overflow-y:auto; display:flex; flex-direction:column; gap:6px; margin-top:10px;"></div>
+
+      <hr style="margin:18px 0 14px; border:none; border-top:1px solid #E5E9F0;">
       <div class="field">
         <label>Leave File(s) (.csv / .xlsx) *</label>
         <input type="file" id="leaveUploadFile" accept=".csv,.xlsx,.xls" multiple>
@@ -749,16 +765,6 @@
           <button class="btn btn-outline" style="flex:1; padding:8px; font-size:12.5px;" onclick="openProformaModal('operational')">📄 Operational Format</button>
         </div>
       </div>
-
-      <hr style="margin:18px 0 14px; border:none; border-top:1px solid #E5E9F0;">
-      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
-        <label style="margin:0; font-weight:600;">Leave Summary — by employee</label>
-        <button onclick="clearAllLeaveRecords()" style="background:#FFF1F2; color:#E0374B; border:1px solid #F3C2C8; border-radius:7px; padding:6px 10px; font-size:12px; font-weight:600; cursor:pointer;">🗑 All Clear</button>
-      </div>
-      <div class="field" style="margin-bottom:10px;">
-        <input type="text" id="leaveSummarySearch" placeholder="Search by name or employee code..." oninput="renderLeaveSummary()">
-      </div>
-      <div id="leaveSummaryList" style="max-height:260px; overflow-y:auto; display:flex; flex-direction:column; gap:6px;"></div>
     </div>
     <div class="modal-foot">
       <button class="btn-cancel" onclick="closeLeaveUploadModal()">Close</button>
@@ -796,6 +802,19 @@
         Choose one or more monthly Day Off Check files (CSV or Excel): Name, Employee Number, Station Name, then one column per date in that month with each day's code (M, e, n, admin, OFF, On Leave, etc).
         Cells marked <b>OFF</b> are counted as that employee's day off for the month. The rows get added to the end of the existing Day Off Check records — nothing already saved is removed.
       </p>
+
+      <div style="position:sticky; top:0; z-index:2; background:#fff; padding-top:2px; padding-bottom:6px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+          <label style="margin:0; font-weight:600;">Day Off Summary — by employee</label>
+          <button onclick="clearAllDayOffRecords()" style="background:#FFF1F2; color:#E0374B; border:1px solid #F3C2C8; border-radius:7px; padding:6px 10px; font-size:12px; font-weight:600; cursor:pointer;">🗑 All Clear</button>
+        </div>
+        <div class="field" style="margin-bottom:0;">
+          <input type="text" id="dayOffSummarySearch" placeholder="Search by name or employee code..." oninput="renderDayOffSummary()" autofocus>
+        </div>
+      </div>
+      <div id="dayOffSummaryList" style="max-height:260px; overflow-y:auto; display:flex; flex-direction:column; gap:6px; margin-top:10px;"></div>
+
+      <hr style="margin:18px 0 14px; border:none; border-top:1px solid #E5E9F0;">
       <div class="field">
         <label>Day Off Check File(s) (.csv / .xlsx) *</label>
         <input type="file" id="dayOffUploadFile" accept=".csv,.xlsx,.xls" multiple>
@@ -805,16 +824,6 @@
         <label style="margin:0 0 8px; font-weight:600; display:block;">📁 Uploaded Files</label>
         <div id="dayOffBatchesList" style="max-height:160px; overflow-y:auto; display:flex; flex-direction:column; gap:6px; margin-bottom:10px;"></div>
       </div>
-
-      <hr style="margin:18px 0 14px; border:none; border-top:1px solid #E5E9F0;">
-      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
-        <label style="margin:0; font-weight:600;">Day Off Summary — by employee</label>
-        <button onclick="clearAllDayOffRecords()" style="background:#FFF1F2; color:#E0374B; border:1px solid #F3C2C8; border-radius:7px; padding:6px 10px; font-size:12px; font-weight:600; cursor:pointer;">🗑 All Clear</button>
-      </div>
-      <div class="field" style="margin-bottom:10px;">
-        <input type="text" id="dayOffSummarySearch" placeholder="Search by name or employee code..." oninput="renderDayOffSummary()">
-      </div>
-      <div id="dayOffSummaryList" style="max-height:260px; overflow-y:auto; display:flex; flex-direction:column; gap:6px;"></div>
     </div>
     <div class="modal-foot">
       <button class="btn-cancel" onclick="closeDayOffUploadModal()">Close</button>
@@ -977,7 +986,7 @@
 <div class="overlay" id="messagesModalOverlay">
   <div class="modal" style="max-width:640px;">
     <div class="modal-head">
-      <h2>💬 Message Format</h2>
+      <h2><svg width="18" height="18" viewBox="0 0 32 32" style="vertical-align:-3px;" xmlns="http://www.w3.org/2000/svg"><circle cx="16" cy="16" r="16" fill="#25D366"/><path fill="#fff" d="M16 7c-5 0-9 4-9 9 0 1.6.4 3.1 1.2 4.4L7 25l4.8-1.3A9 9 0 1 0 16 7zm0 16.4c-1.5 0-3-.4-4.2-1.1l-.3-.2-3.1.8.8-3-.2-.3A7.4 7.4 0 1 1 16 23.4zm4.1-5.5c-.2-.1-1.3-.7-1.5-.7-.2-.1-.3-.1-.5.1l-.7.8c-.1.2-.3.2-.5.1-.2-.1-1-.4-1.9-1.2-.7-.6-1.2-1.4-1.3-1.6-.1-.2 0-.4.1-.5l.4-.4c.1-.1.2-.3.2-.4.1-.1 0-.3 0-.4 0-.1-.5-1.3-.7-1.7-.2-.4-.4-.4-.5-.4h-.5c-.2 0-.4.1-.6.3-.2.2-.8.8-.8 2s.9 2.4.9 2.5c.1.2 1.7 2.6 4.1 3.6.6.2 1 .4 1.4.5.6.2 1.1.1 1.5.1.5-.1 1.3-.5 1.5-1.1.2-.5.2-1 .1-1.1-.1-.1-.2-.2-.4-.3z"/></svg> Message Format</h2>
       <button class="close" onclick="closeMessagesModal()">✕</button>
     </div>
     <div class="modal-body">
@@ -999,7 +1008,7 @@
 <div class="overlay" id="messageOverlay">
   <div class="modal" style="max-width:600px;">
     <div class="modal-head">
-      <h2 id="messageModalTitle">💬 Add Message</h2>
+      <h2 id="messageModalTitle"><svg width="18" height="18" viewBox="0 0 32 32" style="vertical-align:-3px;" xmlns="http://www.w3.org/2000/svg"><circle cx="16" cy="16" r="16" fill="#25D366"/><path fill="#fff" d="M16 7c-5 0-9 4-9 9 0 1.6.4 3.1 1.2 4.4L7 25l4.8-1.3A9 9 0 1 0 16 7zm0 16.4c-1.5 0-3-.4-4.2-1.1l-.3-.2-3.1.8.8-3-.2-.3A7.4 7.4 0 1 1 16 23.4zm4.1-5.5c-.2-.1-1.3-.7-1.5-.7-.2-.1-.3-.1-.5.1l-.7.8c-.1.2-.3.2-.5.1-.2-.1-1-.4-1.9-1.2-.7-.6-1.2-1.4-1.3-1.6-.1-.2 0-.4.1-.5l.4-.4c.1-.1.2-.3.2-.4.1-.1 0-.3 0-.4 0-.1-.5-1.3-.7-1.7-.2-.4-.4-.4-.5-.4h-.5c-.2 0-.4.1-.6.3-.2.2-.8.8-.8 2s.9 2.4.9 2.5c.1.2 1.7 2.6 4.1 3.6.6.2 1 .4 1.4.5.6.2 1.1.1 1.5.1.5-.1 1.3-.5 1.5-1.1.2-.5.2-1 .1-1.1-.1-.1-.2-.2-.4-.3z"/></svg> Add Message</h2>
       <button class="close" onclick="closeMessageModal()">✕</button>
     </div>
     <div class="modal-body">
@@ -1408,7 +1417,7 @@ function getFilteredContacts(){
     if(dept && c.department !== dept) return false;
     if(tehsil && c.tehsil !== tehsil) return false;
     if(search){
-      const hay = [c.firstName,c.lastName,c.designation,c.department,c.group,c.bloodGroup,c.tehsil,c.address,c.officeAddress,c.notes,
+      const hay = [c.firstName,c.lastName,c.employeeCode,c.designation,c.department,c.group,c.bloodGroup,c.tehsil,c.address,c.officeAddress,c.notes,
         ...(c.numbers||[]).map(n=>n.value)].join(' ').toLowerCase();
       if(!hay.includes(search)) return false;
     }
@@ -1562,7 +1571,7 @@ let editingMessageId = null;
 function openMessageModal(id){
   editingMessageId = id || null;
   const m = id ? messages.find(x=>x.id===id) : null;
-  document.getElementById('messageModalTitle').textContent = m ? '💬 Edit Message' : '💬 Add Message';
+  document.getElementById('messageModalTitle').innerHTML = (m ? waIconSvg(18)+' Edit Message' : waIconSvg(18)+' Add Message');
   document.getElementById('msg_title').value = m ? m.title : '';
   document.getElementById('msg_text').value = m ? m.text : '';
   document.getElementById('messageOverlay').classList.add('show');
@@ -1942,8 +1951,18 @@ function renderBirthdayPanel(){
   if(upcoming.length===0){ list.innerHTML = '<div class="dp-empty">No birthdays in the next 2 days.</div>'; return; }
   list.innerHTML = upcoming.map(c=>{
     const d = daysUntilBirthday(c.birthday);
-    const when = d===0 ? 'Today' : (d===1 ? 'Tomorrow' : `In ${d} days`);
-    return `<div class="dp-item"><b>${c.firstName} ${c.lastName||''}</b><span>🎂 ${c.birthday} — ${when}</span></div>`;
+    const when = d===0 ? 'Today 🎉' : (d===1 ? 'Tomorrow' : `In ${d} days`);
+    const subBits = [c.designation, c.department].filter(Boolean).join(' · ');
+    const nums = (c.numbers||[]).filter(n=>n.value);
+    const numsHtml = nums.length
+      ? nums.map(n=>`<div style="font-size:12px; color:#3A4A5B; margin-top:2px;">${n.value} <span style="color:#8A94A3;">(${n.type})</span>${phoneActionLinks(n.type, n.value)}</div>`).join('')
+      : '<div style="font-size:11.5px; color:#8A94A3; margin-top:2px;">No phone number on file</div>';
+    return `<div class="dp-item">
+      <b>${c.firstName} ${c.lastName||''}</b><span style="float:right; font-weight:700; color:${d===0?'#2CB673':'#FF9F1C'};">${when}</span>
+      ${subBits?`<div style="font-size:11.5px; color:#8A94A3; margin-top:2px;">${subBits}${c.employeeCode?(' · Code: '+c.employeeCode):''}</div>`:''}
+      <div style="font-size:11.5px; color:#8A94A3; margin-top:2px;">🎂 ${c.birthday}</div>
+      ${numsHtml}
+    </div>`;
   }).join('');
 }
 
@@ -2191,6 +2210,10 @@ function toWhatsAppDigits(raw){
   else if(d.startsWith('0')) d = '92' + d.slice(1); // 0300...   -> 92300...
   return d;
 }
+function waIconSvg(size){
+  size = size || 15;
+  return `<svg width="${size}" height="${size}" viewBox="0 0 32 32" style="vertical-align:-3px;" xmlns="http://www.w3.org/2000/svg"><circle cx="16" cy="16" r="16" fill="#25D366"/><path fill="#fff" d="M16 7c-5 0-9 4-9 9 0 1.6.4 3.1 1.2 4.4L7 25l4.8-1.3A9 9 0 1 0 16 7zm0 16.4c-1.5 0-3-.4-4.2-1.1l-.3-.2-3.1.8.8-3-.2-.3A7.4 7.4 0 1 1 16 23.4zm4.1-5.5c-.2-.1-1.3-.7-1.5-.7-.2-.1-.3-.1-.5.1l-.7.8c-.1.2-.3.2-.5.1-.2-.1-1-.4-1.9-1.2-.7-.6-1.2-1.4-1.3-1.6-.1-.2 0-.4.1-.5l.4-.4c.1-.1.2-.3.2-.4.1-.1 0-.3 0-.4 0-.1-.5-1.3-.7-1.7-.2-.4-.4-.4-.5-.4h-.5c-.2 0-.4.1-.6.3-.2.2-.8.8-.8 2s.9 2.4.9 2.5c.1.2 1.7 2.6 4.1 3.6.6.2 1 .4 1.4.5.6.2 1.1.1 1.5.1.5-.1 1.3-.5 1.5-1.1.2-.5.2-1 .1-1.1-.1-.1-.2-.2-.4-.3z"/></svg>`;
+}
 function phoneActionLinks(type, value){
   const digits = (value||'').replace(/[^\d+]/g,'');
   if(!digits) return '';
@@ -2198,7 +2221,7 @@ function phoneActionLinks(type, value){
   const t = (type||'').toLowerCase();
   if(t==='mobile' || t==='whatsapp'){
     const waDigits = toWhatsAppDigits(value);
-    html += `<a href="https://wa.me/${waDigits}" target="_blank" rel="noopener" onclick="event.stopPropagation();" title="WhatsApp ${value}" style="text-decoration:none; margin-left:4px;">💬</a>`;
+    html += `<a href="https://wa.me/${waDigits}" target="_blank" rel="noopener" onclick="event.stopPropagation();" title="WhatsApp ${value}" style="text-decoration:none; margin-left:4px;">${waIconSvg(15)}</a>`;
   }
   return html;
 }
@@ -3083,6 +3106,65 @@ function generateMonthlyReportPDF(){
     setTimeout(()=>document.body.classList.remove('report-mode'), 300);
   }, 150);
 }
+// One PDF, all at once: every employee whose Casual Leave balance for the current year is
+// 4 days or fewer, each with their full Leave record history — not one employee at a time.
+function generateLowLeaveBalanceReportPDF(){
+  const currentYear = String(new Date().getFullYear());
+  const groups = leaveSummaryGroups();
+  const flagged = groups.map(g=>{
+    const balances = g.casualBalances || [];
+    const b = balances.find(x=>x.year===currentYear) || (balances.length===1 ? balances[0] : null);
+    return b ? {g, b} : null;
+  }).filter(x=> x && x.b.remaining<=4).sort((a,b)=> a.b.remaining-b.b.remaining);
+
+  if(flagged.length===0){ toast('No employee currently has 4 or fewer Casual Leave days left'); return; }
+
+  const sectionsHtml = flagged.map(({g,b})=>{
+    const rows = g.records.slice().sort((a,c)=>(a.dateRange||'').localeCompare(c.dateRange||''));
+    const rowsHtml = rows.map(r=>`<tr>
+        <td style="border:1px solid #999; padding:4px 6px;">${r.dateRange||''}</td>
+        <td style="border:1px solid #999; padding:4px 6px;">${r.leaveType||''}</td>
+        <td style="border:1px solid #999; padding:4px 6px;">${r.days||''}</td>
+        <td style="border:1px solid #999; padding:4px 6px;">${r.status||''}</td>
+        <td style="border:1px solid #999; padding:4px 6px;">${r.remarks||''}</td>
+      </tr>`).join('');
+    return `<div style="margin-bottom:18px; page-break-inside:avoid;">
+      <div style="display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:6px; border-bottom:2px solid #E0374B; padding-bottom:4px; margin-bottom:6px;">
+        <div style="font-size:13.5px; font-weight:800;">${g.name||''} <span style="font-weight:400; color:#555;">${g.employeeCode?('· Code: '+g.employeeCode):''}${g.designation?(' · '+g.designation):''}</span></div>
+        <div style="font-size:13px; font-weight:800; color:#E0374B;">Casual Leave Balance: ${b.remaining}/${CASUAL_LEAVE_ANNUAL_QUOTA} (${b.year})</div>
+      </div>
+      <table style="width:100%; border-collapse:collapse; font-size:11px;">
+        <tr style="background:#f0f0f0;">
+          <th style="border:1px solid #999; padding:4px 6px; text-align:left;">Date Range</th>
+          <th style="border:1px solid #999; padding:4px 6px; text-align:left;">Type</th>
+          <th style="border:1px solid #999; padding:4px 6px; text-align:left;">Days</th>
+          <th style="border:1px solid #999; padding:4px 6px; text-align:left;">Status</th>
+          <th style="border:1px solid #999; padding:4px 6px; text-align:left;">Remarks</th>
+        </tr>
+        ${rowsHtml}
+      </table>
+    </div>`;
+  }).join('');
+
+  const now = new Date();
+  document.getElementById('monthlyReportPrintArea').innerHTML = `
+    <div style="text-align:center; margin-bottom:8px;">
+      <div style="font-size:16px; font-weight:800;">CONTACT MANAGEMENT SYSTEM — RESCUE 1122 RAHIM YAR KHAN</div>
+      <div style="font-size:13px; margin-top:3px;">Low Casual Leave Balance Report — ${flagged.length} employee${flagged.length===1?'':'s'} with 4 or fewer days left (${currentYear})</div>
+      <div style="font-size:10px; color:#666; margin-top:2px;">Generated: ${now.toLocaleString()}</div>
+    </div>
+    <hr style="margin:10px 0; border:none; border-top:2px solid #333;">
+    ${sectionsHtml}
+    <div style="margin-top:26px; display:flex; justify-content:space-between; font-size:11px; color:#333;">
+      <div>Prepared by: ____________________</div>
+      <div>Signature: ____________________</div>
+    </div>`;
+  document.body.classList.add('report-mode');
+  setTimeout(()=>{
+    window.print();
+    setTimeout(()=>document.body.classList.remove('report-mode'), 300);
+  }, 150);
+}
 function renderRecordSearchResults(){
   let from = document.getElementById('rs_fromDate').value;
   let to = document.getElementById('rs_toDate').value;
@@ -3210,12 +3292,22 @@ function openEditModal(id){
 }
 function closeModal(){ document.getElementById('contactOverlay').classList.remove('show'); }
 
+// Local Pakistani-style numbers are stored with a leading 0 (e.g. 0300-1234567). If someone
+// types/pastes one without it, add it back — but leave "+92..." international numbers, and
+// anything that isn't a plain digit/dash/space number (extensions, notes, etc), untouched.
+function normalizePhoneNumber(v){
+  const s = (v||'').trim();
+  if(!s) return s;
+  if(s.startsWith('+')) return s;
+  if(!/^[0-9][0-9\-\s]*$/.test(s)) return s;
+  return s[0]==='0' ? s : ('0'+s);
+}
 function saveContact(){
   const firstName = document.getElementById('f_firstName').value.trim();
   if(!firstName){ toast('First Name is required'); return; }
   const numbers = [...document.querySelectorAll('#numbersBlock .number-row')].map(row=>({
     type: row.querySelector('.numType').value,
-    value: row.querySelector('.numValue').value.trim()
+    value: normalizePhoneNumber(row.querySelector('.numValue').value.trim())
   })).filter(n=>n.value);
 
   const data = {
@@ -3523,10 +3615,10 @@ function confirmImport(){
     });
     if(!obj.firstName) return;
     const numbers = [];
-    if(obj.mobile) numbers.push({type:'Mobile', value:obj.mobile});
-    if(obj.phone) numbers.push({type:'Office', value:obj.phone});
-    if(obj.home) numbers.push({type:'Home', value:obj.home});
-    if(obj.whatsapp) numbers.push({type:'WhatsApp', value:obj.whatsapp});
+    if(obj.mobile) numbers.push({type:'Mobile', value:normalizePhoneNumber(obj.mobile)});
+    if(obj.phone) numbers.push({type:'Office', value:normalizePhoneNumber(obj.phone)});
+    if(obj.home) numbers.push({type:'Home', value:normalizePhoneNumber(obj.home)});
+    if(obj.whatsapp) numbers.push({type:'WhatsApp', value:normalizePhoneNumber(obj.whatsapp)});
     const now = Date.now() + idx; // preserve file order when ranking "recent"
 
     // de-dupe by firstName+lastName+first number
