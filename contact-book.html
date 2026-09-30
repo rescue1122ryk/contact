@@ -402,6 +402,9 @@
     .stat-card .head .title { font-size:11.5px; }
     .filterbar .btn { font-size:11.5px; }
   }
+  /* Search / filter mode: show only the filter bar, the filter banner and the matching contacts */
+  body.search-active .content > *:not(#filterBanner):not(#contactsPanel) { display:none !important; }
+  body.search-active #tickerWrap, body.search-active #resumeBanner { display:none !important; }
 </style>
 </head>
 <body>
@@ -540,7 +543,7 @@
     <button class="clear" onclick="clearAllFilters()">✕ Clear Filter</button>
   </div>
 
-  <div class="panel">
+  <div class="panel" id="contactsPanel">
     <div class="panel-head">
       <span>Contacts</span>
       <div style="display:flex; align-items:center; gap:10px;">
@@ -1427,6 +1430,7 @@ function getFilteredContacts(){
 }
 
 function renderTable(){
+  updateSearchMode();
   const list = getFilteredContacts();
   const hasActiveFilter = !!(document.getElementById('searchBox').value.trim() || document.getElementById('deptFilter').value || document.getElementById('tehsilFilter').value || activeBlood || activeGroup);
 
@@ -1972,9 +1976,9 @@ function toggleBloodFilter(key){ activeBlood = (activeBlood===key) ? null : key;
 function toggleGroupFilter(g){ activeGroup = (activeGroup===g) ? null : g; render(); }
 function clearAllFilters(){ activeBlood=null; activeGroup=null; document.getElementById('searchBox').value=''; document.getElementById('deptFilter').value=''; document.getElementById('tehsilFilter').value=''; updateSearchMode(); render(); }
 function updateSearchMode(){
-  const hasSearch = document.getElementById('searchBox').value.trim().length > 0;
-  const dashEls = ['statGrid','groupsLabel','groupTiles','bloodLabel','bloodTiles'];
-  dashEls.forEach(id=>{ document.getElementById(id).style.display = hasSearch ? 'none' : ''; });
+  // Any active search/filter (text, department, tehsil, blood group, group tile) => results-only view
+  const active = !!(document.getElementById('searchBox').value.trim() || document.getElementById('deptFilter').value || document.getElementById('tehsilFilter').value || activeBlood || activeGroup);
+  document.body.classList.toggle('search-active', active);
 }
 document.getElementById('searchBox').addEventListener('input', function(){ updateSearchMode(); renderTable(); });
 document.getElementById('searchBox').addEventListener('keydown', function(e){
